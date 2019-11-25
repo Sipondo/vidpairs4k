@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import csv
 import os
+import re
 import shutil
 import subprocess
 import youtube_dl
@@ -14,6 +15,8 @@ ydl_opts = {
  }
 
 paths = ['dataset', 'tempvideo', 'tempimages'] + [f'dataset/{format}' for format in formats]
+
+paths = ['tempvideo', 'tempimages']
 
 for path in paths:
     try:
@@ -64,7 +67,8 @@ def ffmpeg_get_crop():
     res = str(subprocess.check_output("ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT))
     res = res.split("crop=3840:")[1]
     offset = res.split(":0:")[1][:3]
-    return res[:4], offset#subprocess.call(f"ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
+    res = re.sub('[^0-9]','', res[:4])
+    return res, offset#subprocess.call(f"ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
 
 def ffmpeg_apply_crop(target, dest, res, offset):
     subprocess.call(f"ffmpeg -loglevel quiet -y -i {target} -vf crop=3840:{res}:0:{offset} {dest}")
@@ -86,29 +90,52 @@ url_list = load_urls()
 
 
 current_image = 0
+last_line = ""
+current_downloaded = ""
 for download_line in url_list:
-    print("Video: ", download_line[0])
-    download_video(download_line[0])
-    crop_res, crop_offset = ffmpeg_get_crop()
-    ffmpeg_keysplit()
-
+    need_to_run = False
     for frame, start, length in grouped(download_line[1:], 3):
-        print("Instruction:", frame, start, length)
-        frame = int(frame)
-        start = int(start)
-        length = int(length)
-        print("Splitting", f"tempvideo/OUTPUT{frame}.mp4")
+        all_present = True
+        for format in formats[:]:
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image}.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image+1}.jpg'))
+        need_to_run = need_to_run or (not all_present)
 
-        ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
-        ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-        ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
-        current_image+=1
-        ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-        ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
-        current_image+=1
-        shutil.rmtree('tempimages/')
-        time.sleep(1)
-        os.mkdir('tempimages/')
-    shutil.rmtree('tempvideo/')
-    time.sleep(1)
-    os.mkdir('tempvideo/')
+    if download_line[0]!='*':
+        last_line = download_line[0]
+    if need_to_run:
+        if (last_line == current_downloaded):
+            pass
+        else:
+            current_downloaded = last_line
+            shutil.rmtree('tempvideo/')
+            time.sleep(1)
+            os.mkdir('tempvideo/')
+
+            print("Video: ", last_line, current_image, ((current_image+2)//2))
+            download_video(last_line)
+            crop_res, crop_offset = ffmpeg_get_crop()
+            ffmpeg_keysplit()
+
+        for frame, start, length in grouped(download_line[1:], 3):
+            # print("Instruction:", frame, start, length)
+            frame = int(frame)
+            start = int(start)
+            length = int(length)
+            # print("Splitting", f"tempvideo/OUTPUT{frame}.mp4")
+
+            ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
+            ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            current_image+=1
+            ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            current_image+=1
+            shutil.rmtree('tempimages/')
+            time.sleep(1)
+            os.mkdir('tempimages/')
+        # exit[0]
+    else:
+        print(f"Skipping {current_image} ({(current_image+2)//2})")
+        for frame, start, length in grouped(download_line[1:], 3):
+            current_image+=2
