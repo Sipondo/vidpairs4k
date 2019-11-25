@@ -67,6 +67,7 @@ def ffmpeg_get_crop():
     res = str(subprocess.check_output("ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT))
     res = res.split("crop=3840:")[1]
     offset = res.split(":0:")[1][:3]
+    offset = re.sub('[^0-9]','', offset)
     res = re.sub('[^0-9]','', res[:4])
     return res, offset#subprocess.call(f"ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
 
@@ -118,12 +119,15 @@ for download_line in url_list:
             ffmpeg_keysplit()
 
         for frame, start, length in grouped(download_line[1:], 3):
-            # print("Instruction:", frame, start, length)
+            print(current_image, "Instruction:", frame, start, length)
             frame = int(frame)
             start = int(start)
             length = int(length)
             # print("Splitting", f"tempvideo/OUTPUT{frame}.mp4")
 
+            shutil.rmtree('tempimages/')
+            time.sleep(1)
+            os.mkdir('tempimages/')
             ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
             ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
             ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
@@ -131,10 +135,13 @@ for download_line in url_list:
             ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
             ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
             current_image+=1
-            shutil.rmtree('tempimages/')
-            time.sleep(1)
-            os.mkdir('tempimages/')
-        # exit[0]
+
+        all_present = True
+        for format in formats[:]:
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image-1}.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image-2}.jpg'))
+        if not all_present:
+            exit[0]
     else:
         print(f"Skipping {current_image} ({(current_image+2)//2})")
         for frame, start, length in grouped(download_line[1:], 3):
