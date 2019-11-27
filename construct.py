@@ -16,7 +16,7 @@ ydl_opts = {
 
 paths = ['dataset', 'tempvideo', 'tempimages'] + [f'dataset/{format}' for format in formats]
 
-paths = ['tempvideo', 'tempimages']
+# paths = ['tempvideo', 'tempimages']
 
 for path in paths:
     try:
