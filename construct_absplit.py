@@ -16,21 +16,21 @@ ydl_opts = {
 
 paths = ['dataset', 'tempvideo', 'tempimages'] + [f'dataset/{format}' for format in formats]
 
-paths = ['tempvideo', 'tempimages']
-
-for path in paths:
-    try:
-        shutil.rmtree(path)
-    except OSError:
-        print ("Removing of the directory %s failed" % path)
-    else:
-        print ("Successfully removed the directory %s " % path)
-    try:
-        os.mkdir(path)
-    except OSError:
-        print ("Creation of the directory %s failed" % path)
-    else:
-        print ("Successfully created the directory %s " % path)
+# paths = ['tempvideo', 'tempimages']
+#
+# for path in paths:
+#     try:
+#         shutil.rmtree(path)
+#     except OSError:
+#         print ("Removing of the directory %s failed" % path)
+#     else:
+#         print ("Successfully removed the directory %s " % path)
+#     try:
+#         os.mkdir(path)
+#     except OSError:
+#         print ("Creation of the directory %s failed" % path)
+#     else:
+#         print ("Successfully created the directory %s " % path)
 
 def grouped(iterable, n):
     "s -> (s0,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), (s2n,s2n+1,s2n+2,...s3n-1), ..."
@@ -91,6 +91,7 @@ url_list = load_urls()
 
 
 current_image = 0
+current_image_name = f"{current_image//2+1}"
 last_line = ""
 current_downloaded = ""
 for download_line in url_list:
@@ -98,8 +99,8 @@ for download_line in url_list:
     for frame, start, length in grouped(download_line[1:], 3):
         all_present = True
         for format in formats[:]:
-            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image}.jpg'))
-            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image+1}.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image_name}_a.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image_name}_b.jpg'))
         need_to_run = need_to_run or (not all_present)
 
     if download_line[0]!='*':
@@ -129,20 +130,22 @@ for download_line in url_list:
             time.sleep(1)
             os.mkdir('tempimages/')
             ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
-            ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image_name}_a.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image_name}_a.jpg', crop_res)
             current_image+=1
-            ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image_name}_b.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image_name}_b.jpg', crop_res)
             current_image+=1
+            current_image_name = f"{current_image//2+1}"
 
         all_present = True
         for format in formats[:]:
-            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image-1}.jpg'))
-            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image-2}.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image//2}_a.jpg'))
+            all_present = all_present and (os.path.isfile(f'dataset/{format}/{current_image//2}_b.jpg'))
         if not all_present:
             exit[0]
     else:
         print(f"Skipping {current_image} ({(current_image+2)//2})")
         for frame, start, length in grouped(download_line[1:], 3):
             current_image+=2
+            current_image_name = f"{current_image//2+1}"
