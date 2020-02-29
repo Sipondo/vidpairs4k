@@ -116,8 +116,8 @@ for download_line in url_list:
 
             print("Video: ", last_line, current_image, ((current_image+2)//2))
             download_video(last_line)
-            crop_res, crop_offset = ./ffmpeg_get_crop()
-            ./ffmpeg_keysplit()
+            crop_res, crop_offset = ffmpeg_get_crop()
+            ffmpeg_keysplit()
 
         for frame, start, length in grouped(download_line[1:], 3):
             print(current_image, "Instruction:", current_image//2+1, frame, start, length)
@@ -129,12 +129,12 @@ for download_line in url_list:
             shutil.rmtree('tempimages/')
             time.sleep(1)
             os.mkdir('tempimages/')
-            ./ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
-            ./ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ./ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
+            ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
             current_image+=1
-            ./ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ./ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
             current_image+=1
 
         all_present = True
