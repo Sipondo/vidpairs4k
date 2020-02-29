@@ -65,7 +65,7 @@ def download_video(url):
         ydl.download([url])
 
 def ffmpeg_get_crop():
-    res = str(subprocess.check_output("./ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT))
+    res = str(subprocess.check_output("./ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT, shell=True))
     res = res.split("crop=3840:")[1]
     offset = res.split(":0:")[1][:3]
     offset = re.sub('[^0-9]','', offset)
@@ -73,18 +73,18 @@ def ffmpeg_get_crop():
     return res, offset#subprocess.call(f"./ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
 
 def ffmpeg_apply_crop(target, dest, res, offset):
-    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} -vf crop=3840:{res}:0:{offset} {dest}")
+    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} -vf crop=3840:{res}:0:{offset} {dest}", shell=True)
 
 def ffmpeg_keysplit():
-    subprocess.call("./ffmpeg -loglevel quiet -y -i tempvideo/trailer.webm -an -f segment -vcodec copy -reset_timestamps 1 -map 0 tempvideo/OUTPUT%d.mp4")
+    subprocess.call("./ffmpeg -loglevel quiet -y -i tempvideo/trailer.webm -an -f segment -vcodec copy -reset_timestamps 1 -map 0 tempvideo/OUTPUT%d.mp4", shell=True)
 
 def ffmpeg_split_into_images(target):
-    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} tempimages/thumb%04d.jpg -hide_banner")
+    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} tempimages/thumb%04d.jpg -hide_banner", shell=True)
 
 def ffmpeg_copy_to_lower_res(target, res):
     for format in formats[1:]:
         scale = formats[0]/format
-        subprocess.call(f"./ffmpeg -loglevel quiet -y -i dataset/{formats[0]}/{target} -vf scale={format}:{int(res)/scale} dataset/{format}/{target}")
+        subprocess.call(f"./ffmpeg -loglevel quiet -y -i dataset/{formats[0]}/{target} -vf scale={format}:{int(res)/scale} dataset/{format}/{target}", shell=True)
 
 
 url_list = load_urls()
