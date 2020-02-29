@@ -64,27 +64,27 @@ def download_video(url):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-def ffmpeg_get_crop():
-    res = str(subprocess.check_output("ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT))
+def ./ffmpeg_get_crop():
+    res = str(subprocess.check_output("./ffmpeg -ss 15 -i tempvideo/trailer.webm -vframes 300 -vf cropdetect -f null -",  stderr=subprocess.STDOUT))
     res = res.split("crop=3840:")[1]
     offset = res.split(":0:")[1][:3]
     offset = re.sub('[^0-9]','', offset)
     res = re.sub('[^0-9]','', res[:4])
-    return res, offset#subprocess.call(f"ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
+    return res, offset#subprocess.call(f"./ffmpeg -loglevel quiet -i tempvideo/trailer.webm -vf crop=3840:{res[:4]}:0:0 -c:a copy tempvideo/trailerclean.webm")
 
-def ffmpeg_apply_crop(target, dest, res, offset):
-    subprocess.call(f"ffmpeg -loglevel quiet -y -i {target} -vf crop=3840:{res}:0:{offset} {dest}")
+def ./ffmpeg_apply_crop(target, dest, res, offset):
+    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} -vf crop=3840:{res}:0:{offset} {dest}")
 
-def ffmpeg_keysplit():
-    subprocess.call("ffmpeg -loglevel quiet -y -i tempvideo/trailer.webm -an -f segment -vcodec copy -reset_timestamps 1 -map 0 tempvideo/OUTPUT%d.mp4")
+def ./ffmpeg_keysplit():
+    subprocess.call("./ffmpeg -loglevel quiet -y -i tempvideo/trailer.webm -an -f segment -vcodec copy -reset_timestamps 1 -map 0 tempvideo/OUTPUT%d.mp4")
 
-def ffmpeg_split_into_images(target):
-    subprocess.call(f"ffmpeg -loglevel quiet -y -i {target} tempimages/thumb%04d.jpg -hide_banner")
+def ./ffmpeg_split_into_images(target):
+    subprocess.call(f"./ffmpeg -loglevel quiet -y -i {target} tempimages/thumb%04d.jpg -hide_banner")
 
-def ffmpeg_copy_to_lower_res(target, res):
+def ./ffmpeg_copy_to_lower_res(target, res):
     for format in formats[1:]:
         scale = formats[0]/format
-        subprocess.call(f"ffmpeg -loglevel quiet -y -i dataset/{formats[0]}/{target} -vf scale={format}:{int(res)/scale} dataset/{format}/{target}")
+        subprocess.call(f"./ffmpeg -loglevel quiet -y -i dataset/{formats[0]}/{target} -vf scale={format}:{int(res)/scale} dataset/{format}/{target}")
 
 
 url_list = load_urls()
@@ -116,8 +116,8 @@ for download_line in url_list:
 
             print("Video: ", last_line, current_image, ((current_image+2)//2))
             download_video(last_line)
-            crop_res, crop_offset = ffmpeg_get_crop()
-            ffmpeg_keysplit()
+            crop_res, crop_offset = ./ffmpeg_get_crop()
+            ./ffmpeg_keysplit()
 
         for frame, start, length in grouped(download_line[1:], 3):
             print(current_image, "Instruction:", current_image//2+1, frame, start, length)
@@ -129,12 +129,12 @@ for download_line in url_list:
             shutil.rmtree('tempimages/')
             time.sleep(1)
             os.mkdir('tempimages/')
-            ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
-            ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ./ffmpeg_split_into_images(f"tempvideo/OUTPUT{frame}.mp4")
+            ./ffmpeg_apply_crop(f'tempimages/thumb{start:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ./ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
             current_image+=1
-            ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
-            ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
+            ./ffmpeg_apply_crop(f'tempimages/thumb{start+length:04}.jpg', f'dataset/3840/{current_image}.jpg', crop_res, crop_offset)
+            ./ffmpeg_copy_to_lower_res(f'{current_image}.jpg', crop_res)
             current_image+=1
 
         all_present = True
