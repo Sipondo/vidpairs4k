@@ -16,7 +16,7 @@ ydl_opts = {
 
 paths = ['dataset', 'tempvideo', 'tempimages'] + [f'dataset/{format}' for format in formats]
 
-paths = ['tempvideo', 'tempimages']
+# paths = ['tempvideo', 'tempimages']
 
 for path in paths:
     try:
@@ -25,6 +25,7 @@ for path in paths:
         print ("Removing of the directory %s failed" % path)
     else:
         print ("Successfully removed the directory %s " % path)
+    time.sleep(0.1)
     try:
         os.mkdir(path)
     except OSError:
