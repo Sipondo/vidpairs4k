@@ -7,7 +7,7 @@ import subprocess
 import youtube_dl
 import time
 
-formats = [3840, 2160, 1080, 720, 500]
+formats = [3840, 2560, 1920, 1080, 1280, 500]
 
 ydl_opts = {
     'format': '313',
