@@ -1,4 +1,3 @@
 # vidpairs4k
 
-4k vidpairs dataset (in development)
-run construct.py to download the files!
+Vidpairs 4k dataset collected from movie trailers from YouTube.
